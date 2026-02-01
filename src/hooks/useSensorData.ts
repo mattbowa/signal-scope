@@ -15,7 +15,7 @@ export function useSensorData() {
     async function loadData() {
       try {
         // const response = await fetch('/data.json');
-        const response = await fetch('/down.json');
+        const response = await fetch('/data.json');
         if (!response.ok) {
           throw new Error('Failed to load data');
         }
