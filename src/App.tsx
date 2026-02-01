@@ -14,9 +14,9 @@ function App() {
   // State for selected tag IDs
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  // State for quality filter (all selected by default)
+  // State for quality filter (start with only non-good qualities visible)
   const [qualityFilter, setQualityFilter] = useState<Set<string>>(
-    new Set(['good', 'uncertain', 'bad']),
+    new Set(['uncertain', 'bad']),
   );
 
   // Toggle tag selection

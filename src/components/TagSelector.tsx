@@ -8,7 +8,6 @@ interface TagSelectorProps {
 
 /**
  * Component for selecting which sensor tags to display
- * Keeps selection simple with checkboxes
  */
 export function TagSelector({
   tags,
