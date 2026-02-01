@@ -13,6 +13,8 @@ import { TagWithContext } from '../types';
 
 interface TimeSeriesChartProps {
   selectedTags: TagWithContext[];
+  qualityFilter: Set<string>;
+  onQualityFilterChange: (quality: string) => void;
 }
 
 // Colors for different tags
@@ -27,9 +29,10 @@ const QUALITY_COLORS = {
 
 /**
  * Custom dot component to show quality indicators
+ * Only shows dots for quality levels included in the filter
  */
 function QualityDot(props: any) {
-  const { cx, cy, payload, dataKey } = props;
+  const { cx, cy, payload, dataKey, qualityFilter } = props;
 
   if (!payload || !payload[`${dataKey}_quality`]) {
     return null;
@@ -37,8 +40,8 @@ function QualityDot(props: any) {
 
   const quality = payload[`${dataKey}_quality`];
 
-  // Only show dots for uncertain and bad quality
-  if (quality === 'good') {
+  // Only show dot if this quality level is in the filter
+  if (!qualityFilter.has(quality)) {
     return null;
   }
 
@@ -58,7 +61,11 @@ function QualityDot(props: any) {
  * Time series chart component
  * Demonstrates useMemo for performance optimization
  */
-export function TimeSeriesChart({ selectedTags }: TimeSeriesChartProps) {
+export function TimeSeriesChart({
+  selectedTags,
+  qualityFilter,
+  onQualityFilterChange,
+}: TimeSeriesChartProps) {
   // Transform data for Recharts format
   // useMemo prevents recalculation on every render
   const chartData = useMemo(() => {
@@ -123,13 +130,56 @@ export function TimeSeriesChart({ selectedTags }: TimeSeriesChartProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Sensor Data Comparison
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          {chartData.length} data points • Quality indicators: 🟡 Uncertain, 🔴
-          Bad
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">
+              Sensor Data Comparison
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {chartData.length} data points
+            </p>
+          </div>
+
+          {/* Quality Filter */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">
+              Filter Quality:
+            </span>
+            <button
+              onClick={() => onQualityFilterChange('good')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                qualityFilter.has('good')
+                  ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                  : 'bg-gray-100 text-gray-400 border-2 border-transparent'
+              }`}
+            >
+              <span className="text-base">🟢</span>
+              Good
+            </button>
+            <button
+              onClick={() => onQualityFilterChange('uncertain')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                qualityFilter.has('uncertain')
+                  ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-500'
+                  : 'bg-gray-100 text-gray-400 border-2 border-transparent'
+              }`}
+            >
+              <span className="text-base">🟡</span>
+              Uncertain
+            </button>
+            <button
+              onClick={() => onQualityFilterChange('bad')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                qualityFilter.has('bad')
+                  ? 'bg-red-100 text-red-800 border-2 border-red-500'
+                  : 'bg-gray-100 text-gray-400 border-2 border-transparent'
+              }`}
+            >
+              <span className="text-base">🔴</span>
+              Bad
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1">
@@ -178,7 +228,9 @@ export function TimeSeriesChart({ selectedTags }: TimeSeriesChartProps) {
                 dataKey={tag.id}
                 stroke={COLORS[index % COLORS.length]}
                 strokeWidth={2}
-                dot={<QualityDot dataKey={tag.id} />}
+                dot={
+                  <QualityDot dataKey={tag.id} qualityFilter={qualityFilter} />
+                }
                 isAnimationActive={false}
                 connectNulls
               />

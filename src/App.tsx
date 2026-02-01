@@ -14,6 +14,11 @@ function App() {
   // State for selected tag IDs
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
+  // State for quality filter (all selected by default)
+  const [qualityFilter, setQualityFilter] = useState<Set<string>>(
+    new Set(['good', 'uncertain', 'bad']),
+  );
+
   // Toggle tag selection
   const handleToggleTag = (tagId: string) => {
     setSelectedTagIds((prev) =>
@@ -21,6 +26,19 @@ function App() {
         ? prev.filter((id) => id !== tagId)
         : [...prev, tagId],
     );
+  };
+
+  // Toggle quality filter
+  const handleQualityFilterChange = (quality: string) => {
+    setQualityFilter((prev) => {
+      const newFilter = new Set(prev);
+      if (newFilter.has(quality)) {
+        newFilter.delete(quality);
+      } else {
+        newFilter.add(quality);
+      }
+      return newFilter;
+    });
   };
 
   // Get full tag objects for selected IDs
@@ -85,7 +103,11 @@ function App() {
               className="bg-white rounded-lg shadow p-6"
               style={{ height: '600px' }}
             >
-              <TimeSeriesChart selectedTags={selectedTags} />
+              <TimeSeriesChart
+                selectedTags={selectedTags}
+                qualityFilter={qualityFilter}
+                onQualityFilterChange={handleQualityFilterChange}
+              />
             </div>
           </section>
         </div>
