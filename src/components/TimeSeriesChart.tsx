@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useTransition } from 'react';
 import {
   LineChart,
   Line,
@@ -68,8 +68,19 @@ export function TimeSeriesChart({
 }: TimeSeriesChartProps) {
   // Transform data for Recharts format
   // useMemo prevents recalculation on every render
+  // Optimized with Map for O(1) lookups instead of O(N) array.find()
   const chartData = useMemo(() => {
     if (selectedTags.length === 0) return [];
+
+    // Pre-index all points by timestamp for each tag using Map
+    // This converts O(N × M × P) to O(N × M) complexity
+    const tagMaps = selectedTags.map((tag) => {
+      const pointMap = new Map();
+      tag.points.forEach((point) => {
+        pointMap.set(point.ts, point);
+      });
+      return { id: tag.id, pointMap };
+    });
 
     // Get all unique timestamps across all tags
     const timestampSet = new Set<string>();
@@ -81,15 +92,15 @@ export function TimeSeriesChart({
 
     const timestamps = Array.from(timestampSet).sort();
 
-    // Create chart data with all tags for each timestamp
+    // Create chart data with O(1) lookups using Map
     return timestamps.map((ts) => {
       const dataPoint: any = { timestamp: ts };
 
-      selectedTags.forEach((tag) => {
-        const point = tag.points.find((p) => p.ts === ts);
+      tagMaps.forEach(({ id, pointMap }) => {
+        const point = pointMap.get(ts);
         if (point) {
-          dataPoint[tag.id] = point.value;
-          dataPoint[`${tag.id}_quality`] = point.q;
+          dataPoint[id] = point.value;
+          dataPoint[`${id}_quality`] = point.q;
         }
       });
 

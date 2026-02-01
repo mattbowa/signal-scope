@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { useSensorData } from './hooks/useSensorData';
 import { TagSelector } from './components/TagSelector';
 import { TimeSeriesChart } from './components/TimeSeriesChart';
@@ -11,21 +11,26 @@ function App() {
   // Custom hook for data management
   const { loading, error, allTags } = useSensorData();
 
+  // React 18 useTransition for non-blocking UI updates
+  const [isPending, startTransition] = useTransition();
+
   // State for selected tag IDs
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  // State for quality filter (start with only non-good qualities visible)
+  // State for quality filter (all selected by default)
   const [qualityFilter, setQualityFilter] = useState<Set<string>>(
-    new Set(['uncertain', 'bad']),
+    new Set(['good', 'uncertain', 'bad']),
   );
 
-  // Toggle tag selection
+  // Toggle tag selection with transition for large datasets
   const handleToggleTag = (tagId: string) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId],
-    );
+    startTransition(() => {
+      setSelectedTagIds((prev) =>
+        prev.includes(tagId)
+          ? prev.filter((id) => id !== tagId)
+          : [...prev, tagId],
+      );
+    });
   };
 
   // Toggle quality filter
@@ -100,9 +105,17 @@ function App() {
           {/* Main Chart Area */}
           <section className="lg:col-span-3">
             <div
-              className="bg-white rounded-lg shadow p-6"
+              className={`bg-white rounded-lg shadow p-6 transition-opacity ${
+                isPending ? 'opacity-60' : 'opacity-100'
+              }`}
               style={{ height: '600px' }}
             >
+              {isPending && (
+                <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                  Loading...
+                </div>
+              )}
               <TimeSeriesChart
                 selectedTags={selectedTags}
                 qualityFilter={qualityFilter}
